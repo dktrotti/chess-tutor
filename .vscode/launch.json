@@ -1,15 +1,11 @@
 {
     "configurations": [
         {
-            "name": "Launch via NPM",
-            "type": "node",
+            "name": "Attach debugger",
+            "type": "firefox",
             "request": "launch",
-            "cwd": "${workspaceRoot}",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run-script", "start"
-            ],
-            "port": 5858
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}"
         }
     ]
 }
