@@ -2,7 +2,7 @@
   "name": "chess-tutor",
   "version": "0.0.1",
   "description": "A tool for learning chess openings",
-  "main": "main.js",
+  "main": "electron.js",
   "scripts": {
     "start": "electron ."
   },
