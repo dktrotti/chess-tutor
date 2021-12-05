@@ -24,15 +24,15 @@ class TutorBoard extends React.Component {
         return curState
       }
 
-      // TODO: Check for end of line
+      if (!(curState.moveNum in curState.pgnLine.moves)) {
+        // TODO: Emit notification for success
+        return curState
+      }
 
       const correctMoveSan = curState.pgnLine.moves[curState.moveNum].move
       if (move.san !== correctMoveSan) {
         // TODO: Emit notification for mistake
-        const undoMove = updatedGame.undo()
-        if (undoMove === null) {
-          throw 'Could not undo last move'
-        }
+        updatedGame.undo()
 
         const correctMove = updatedGame.move(correctMoveSan)
         if (correctMove === null) {
@@ -40,10 +40,12 @@ class TutorBoard extends React.Component {
         }
       }
 
-      const opponentMoveSan = curState.pgnLine.moves[curState.moveNum + 1].move
-      const opponentMove = updatedGame.move(opponentMoveSan)
-      if (opponentMove === null) {
-        throw `PGN contains illegal move! (${opponentMoveSan})`
+      if (curState.moveNum + 1 in curState.pgnLine.moves) {
+        const opponentMoveSan = curState.pgnLine.moves[curState.moveNum + 1].move
+        const opponentMove = updatedGame.move(opponentMoveSan)
+        if (opponentMove === null) {
+          throw `PGN contains illegal move! (${opponentMoveSan})`
+        }
       }
 
       return {
