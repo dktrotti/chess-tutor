@@ -7,10 +7,9 @@ class TutorBoard extends React.Component {
     super(props)
 
     let game = new Chess()
-    let pgnLine = props.pgnLine
     let moveNum = 0
     if (!props.isWhite) {
-      const moveSan = pgnLine.moves[0].move
+      const moveSan = props.pgnLine.moves[0].move
       const move = game.move(moveSan)
       if (move === null) {
         throw `PGN contains illegal move! (${moveSan})`
@@ -19,10 +18,19 @@ class TutorBoard extends React.Component {
       moveNum++
     }
 
+    // Holds timeouts to ensure that they get cleared on unmount
+    // While this array is wasteful, it's limited to the length of the PGN, so there shouldn't be problems
+    this.timeouts = []
     this.state = {
       game,
-      pgnLine,
-      moveNum
+      moveNum,
+      autoMoveCount: 0
+    }
+  }
+
+  componentWillUnmount() {
+    for (const timeout of this.timeouts) {
+      clearTimeout(timeout)
     }
   }
 
@@ -37,44 +45,86 @@ class TutorBoard extends React.Component {
         return curState
       }
 
-      if (!(curState.moveNum in curState.pgnLine.moves)) {
+      if (!(curState.moveNum in this.props.pgnLine.moves)) {
         // TODO: Emit notification for success
         return curState
       }
 
-      const correctMoveSan = curState.pgnLine.moves[curState.moveNum].move
-      if (move.san !== correctMoveSan) {
+      const correctMoveSan = this.props.pgnLine.moves[curState.moveNum].move
+      if (move.san === correctMoveSan) {
+        return {
+          game: updatedGame,
+          moveNum: curState.moveNum + 1,
+          // Automatically play opponent's move
+          autoMoveCount: 1
+        }
+      } else {
         // TODO: Emit notification for mistake
         updatedGame.undo()
 
-        const correctMove = updatedGame.move(correctMoveSan)
-        if (correctMove === null) {
-          throw `PGN contains illegal move! (${correctMoveSan})`
+        // TODO: The correct move is not animated, possibly because onDrop is not providing a return value
+        return {
+          // Automatically play the correct move, then the opponent's move
+          autoMoveCount: 2
+        }
+      }
+    },
+    () => this.enqueueAutoMove())
+  }
+
+  enqueueAutoMove() {
+    if (this.state.autoMoveCount > 0) {
+      const timeout = setTimeout(() => this.playNextAutoMove(), this.props.animationTimeMs)
+      this.timeouts.push(timeout)
+    }
+  }
+
+  playNextAutoMove() {
+    this.setState(curState => {
+      if (curState.autoMoveCount === 0) {
+        return curState
+      }
+
+      let updatedGame = new Chess()
+      updatedGame.load_pgn(curState.game.pgn())
+
+      if (!(curState.moveNum in this.props.pgnLine.moves)) {
+        // No more moves left
+        return {
+          autoMoveCount: 0
         }
       }
 
-      if (curState.moveNum + 1 in curState.pgnLine.moves) {
-        const opponentMoveSan = curState.pgnLine.moves[curState.moveNum + 1].move
-        const opponentMove = updatedGame.move(opponentMoveSan)
-        if (opponentMove === null) {
-          throw `PGN contains illegal move! (${opponentMoveSan})`
-        }
+      const nextMoveSan = this.props.pgnLine.moves[curState.moveNum].move
+      const nextMove = updatedGame.move(nextMoveSan)
+      if (nextMove === null) {
+        throw `PGN contains illegal move! (${nextMoveSan})`
       }
 
       return {
         game: updatedGame,
-        moveNum: curState.moveNum + 2
+        moveNum: curState.moveNum + 1,
+        autoMoveCount: curState.autoMoveCount - 1
       }
-    })
+    },
+    () => this.enqueueAutoMove())
   }
 
   render() {
     return (
       <div>
-        <Chessboard position={this.state.game.fen()} onPieceDrop={(s, t)=>this.onDrop(s, t)} boardOrientation={this.props.isWhite ? 'white' : 'black'}/>
+        <Chessboard
+          position={this.state.game.fen()}
+          onPieceDrop={(s, t)=>this.onDrop(s, t)}
+          boardOrientation={this.props.isWhite ? 'white' : 'black'}
+          animationDuration={this.props.animationTimeMs}/>
       </div>
     )
   }
+}
+
+TutorBoard.defaultProps = {
+  animationTimeMs: 200
 }
 
 export { TutorBoard }
