@@ -6,23 +6,51 @@ class TutorBoard extends React.Component {
   constructor(props) {
     super(props)
 
-    this.state = { game: new Chess() }
-  }
-
-  updateGameState(updateFunc) {
-    this.setState(prev => {
-      updateFunc(prev.game)
-      return prev
-    })
+    this.state = {
+      game: new Chess(),
+      pgnLine: props.pgnLine,
+      moveNum: 0
+    }
   }
 
   onDrop(sourceSquare, targetSquare) {
-    let move = null
-    this.updateGameState(game => {
-      move = game.move({ from: sourceSquare, to:targetSquare, promotion: 'q' })
+    this.setState(curState => {
+      let updatedGame = new Chess()
+      updatedGame.load_pgn(curState.game.pgn())
+
+      const move = updatedGame.move({ from: sourceSquare, to: targetSquare, promotion: 'q' })
+      if (move === null) {
+        // move will be null if the move was illegal
+        return curState
+      }
+
+      // TODO: Check for end of line
+
+      const correctMoveSan = curState.pgnLine.moves[curState.moveNum].move
+      if (move.san !== correctMoveSan) {
+        // TODO: Emit notification for mistake
+        const undoMove = updatedGame.undo()
+        if (undoMove === null) {
+          throw 'Could not undo last move'
+        }
+
+        const correctMove = updatedGame.move(correctMoveSan)
+        if (correctMove === null) {
+          throw `PGN contains illegal move! (${correctMoveSan})`
+        }
+      }
+
+      const opponentMoveSan = curState.pgnLine.moves[curState.moveNum + 1].move
+      const opponentMove = updatedGame.move(opponentMoveSan)
+      if (opponentMove === null) {
+        throw `PGN contains illegal move! (${opponentMoveSan})`
+      }
+
+      return {
+        game: updatedGame,
+        moveNum: curState.moveNum + 2
+      }
     })
-    // move will be null if the move was illegal
-    return move !== null
   }
 
   render() {

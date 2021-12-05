@@ -9,15 +9,18 @@ class App extends React.Component {
     super()
 
     this.state = {
-      pgn: null
+      pgn: null,
+      pgnStr: ''
     }
   }
 
   updateInputValue(evt) {
-    const [pgn] = this.tryParsePgn(evt.target.value)
+    const pgnStr = evt.target.value
+    const [pgn] = this.tryParsePgn(pgnStr)
     if (pgn !== null) {
       this.setState({
-        pgn: pgn
+        pgn: pgn,
+        pgnStr: pgnStr
       })
     }
   }
@@ -35,8 +38,8 @@ class App extends React.Component {
       <div className="App">
         <header className="App-header">
           <p>1. e4 e5 2. Nf3 Nc6 3. Bc4 *</p>
-          <input value={this.state.inputValue} onChange={evt => this.updateInputValue(evt)}/>
-          <TutorBoard pgnLine={this.state.pgn}/>
+          <input onChange={evt => this.updateInputValue(evt)}/>
+          <TutorBoard pgnLine={this.state.pgn} key={this.state.pgnStr}/>
         </header>
       </div>
     );
