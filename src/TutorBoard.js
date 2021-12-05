@@ -6,10 +6,23 @@ class TutorBoard extends React.Component {
   constructor(props) {
     super(props)
 
+    let game = new Chess()
+    let pgnLine = props.pgnLine
+    let moveNum = 0
+    if (!props.isWhite) {
+      const moveSan = pgnLine.moves[0].move
+      const move = game.move(moveSan)
+      if (move === null) {
+        throw `PGN contains illegal move! (${moveSan})`
+      }
+
+      moveNum++
+    }
+
     this.state = {
-      game: new Chess(),
-      pgnLine: props.pgnLine,
-      moveNum: 0
+      game,
+      pgnLine,
+      moveNum
     }
   }
 
@@ -58,7 +71,7 @@ class TutorBoard extends React.Component {
   render() {
     return (
       <div>
-        <Chessboard position={this.state.game.fen()} onPieceDrop={(s, t)=>this.onDrop(s, t)}/>
+        <Chessboard position={this.state.game.fen()} onPieceDrop={(s, t)=>this.onDrop(s, t)} boardOrientation={this.props.isWhite ? 'white' : 'black'}/>
       </div>
     )
   }

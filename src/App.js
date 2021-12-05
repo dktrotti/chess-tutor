@@ -8,13 +8,20 @@ class App extends React.Component {
   constructor() {
     super()
 
+    const pgnStr = '1. e4 e5 2. Nf3 Nc6 3. Bc4 *'
+    const [pgn] = this.tryParsePgn(pgnStr)
+    if (pgn === null) {
+      throw 'Failed to parse initial PGN'
+    }
+
     this.state = {
-      pgn: null,
-      pgnStr: ''
+      pgn,
+      pgnStr,
+      isWhite: false
     }
   }
 
-  updateInputValue(evt) {
+  updatePgnString(evt) {
     const pgnStr = evt.target.value
     const [pgn] = this.tryParsePgn(pgnStr)
     if (pgn !== null) {
@@ -33,14 +40,25 @@ class App extends React.Component {
     }
   }
 
+  updatePlayer(evt) {
+    this.setState({
+      isWhite: evt.target.checked
+    })
+  }
+
   render() {
     return (
       <div className="App">
         <header className="App-header">
-          <p>1. e4 e5 2. Nf3 Nc6 3. Bc4 *</p>
-          <input onChange={evt => this.updateInputValue(evt)}/>
-          <TutorBoard pgnLine={this.state.pgn} key={this.state.pgnStr}/>
+          <h3>Chess Tutor</h3>
         </header>
+        <div className="App-body">
+          <p>1. e4 e5 2. Nf3 Nc6 3. Bc4 *</p>
+          <input onChange={evt => this.updatePgnString(evt)}/>
+          <input type="checkbox" id="isWhite" name="isWhite" onChange={evt => this.updatePlayer(evt)}/>
+          <label for="isWhite">Play as white</label>
+          <TutorBoard pgnLine={this.state.pgn} isWhite={this.state.isWhite} key={this.state.isWhite + this.state.pgnStr}/>
+        </div>
       </div>
     );
   }
